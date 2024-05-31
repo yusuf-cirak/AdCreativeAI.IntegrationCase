@@ -13,7 +13,7 @@ public sealed class ItemOperationBackend
         // This simulates how long it takes to save
         // the item content. Forty seconds, give or take.
         Thread.Sleep(2_000);
-        
+
         var item = new Item();
         item.Content = itemContent;
         item.Id = GetNextIdentity();
@@ -32,8 +32,5 @@ public sealed class ItemOperationBackend
         return Interlocked.Increment(ref _identitySequence);
     }
 
-    public List<Item> GetAllItems()
-    {
-        return SavedItems.ToList();
-    }
+    public IEnumerable<Item> GetAllItems() => SavedItems;
 }
