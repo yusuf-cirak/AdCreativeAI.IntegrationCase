@@ -1,0 +1,5 @@
+- Single Point of Failure: Current implementation uses Redis as distributed cache provider and the system fails when Redis goes down. In a real world scenario we can create replicas of our Redis cluster that runs in another network.
+
+- Timeouts: Operations for this case take 40 seconds in general, and the cache expiration is set to 80 seconds. If timeouts are not handled, the cache can be removed before it's finished and this would lead to data inconsistency.
+
+- Scalability: Current implementation uses only one Redis instance. In a real world scenario we might want to run our Redis cluster in a Kubernetes cluster. We should also consider data persistence if we choose to run in a Kubernetes cluster.
