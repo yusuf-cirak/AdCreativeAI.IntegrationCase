@@ -4,6 +4,11 @@ namespace Integration.Service.Locks.Providers.InMemory;
 
 public sealed class InMemoryLockProvider : IInMemoryLockProvider
 {
+    private InMemoryLockProvider()
+    {
+    }
+
+    public static InMemoryLockProvider Create() => new();
     private ConcurrentDictionary<string, bool> Locks { get; } = new();
 
     public bool AcquireLock(string key, int expirationSecond)

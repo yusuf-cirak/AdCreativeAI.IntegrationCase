@@ -1,4 +1,5 @@
-﻿using Integration.Common;
+﻿using System.Diagnostics;
+using Integration.Common;
 using Integration.Backend;
 using Integration.Service.Locks.Providers;
 
@@ -9,7 +10,7 @@ public sealed class ItemIntegrationService
     //This is a dependency that is normally fulfilled externally.
     private ItemOperationBackend ItemIntegrationBackend { get; set; } = new();
     public ILockProvider LockProvider { get; }
-
+    public int ItemLockCacheExpiration { get; } = 80;
 
     public ItemIntegrationService(ILockProvider lockProvider)
     {
@@ -22,28 +23,36 @@ public sealed class ItemIntegrationService
     // be allowed for performance reasons.
     public Result SaveItem(string itemContent)
     {
-        if (!LockProvider.AcquireLock(itemContent, 60))
+        string message;
+        var sw = new Stopwatch();
+        sw.Start();
+        if (!LockProvider.AcquireLock(itemContent, expirationSecond: this.ItemLockCacheExpiration))
         {
-            return new Result(false, $"Duplicate item received with content {itemContent}.");
+            message = $"Duplicate item received with content {itemContent}.";
+            return new Result(false, message);
         }
 
+        Console.WriteLine($"SaveItem: Lock acquired for {itemContent}");
         try
         {
             // We're inside the lock scope. No need for additional locking.
 
             if (ItemIntegrationBackend.FindItemsWithContent(itemContent).Count != 0)
             {
-                return new Result(false, $"Duplicate item received with content {itemContent}.");
+                message = $"Duplicate item received with content {itemContent}.";
+                return new Result(false, message);
             }
 
             var item = ItemIntegrationBackend.SaveItem(itemContent);
 
-            return new Result(true, $"Item with content {itemContent} saved with id {item.Id}");
+            message = $"Item with content {itemContent} saved with id {item.Id}";
+
+            return new Result(true, message);
         }
         finally
         {
-            // Removing the lock. 
-            this.LockProvider.ReleaseLock(itemContent);
+            Console.WriteLine(
+                $"SaveItem for {itemContent} took {sw.ElapsedMilliseconds}ms to complete.");
         }
     }
 
