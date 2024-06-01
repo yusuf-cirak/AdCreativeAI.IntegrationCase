@@ -22,7 +22,7 @@ public abstract class Program
             };
 
             configurationOptions.EndPoints.Add("integration-case-redis", 6379);
-            RedisConnectionProvider.Initialize(configurationOptions);
+            RedisConnectionPool.Initialize(configurationOptions, 10);
         }
 
         var service =
@@ -30,7 +30,7 @@ public abstract class Program
                 ? DistributedLockProvider.Create()
                 : InMemoryLockProvider.Create());
 
-        
+
         ThreadPool.QueueUserWorkItem(_ => service.SaveItem("a"));
         ThreadPool.QueueUserWorkItem(_ => service.SaveItem("a"));
 
@@ -41,15 +41,14 @@ public abstract class Program
         ThreadPool.QueueUserWorkItem(_ => service.SaveItem("c"));
         Thread.Sleep(500);
 
-        
+
         ThreadPool.QueueUserWorkItem(_ => service.SaveItem("d"));
         ThreadPool.QueueUserWorkItem(_ => service.SaveItem("d"));
 
         ThreadPool.QueueUserWorkItem(_ => service.SaveItem("b"));
         ThreadPool.QueueUserWorkItem(_ => service.SaveItem("a"));
-        
-        ThreadPool.QueueUserWorkItem(_ => service.SaveItem("e"));
 
+        ThreadPool.QueueUserWorkItem(_ => service.SaveItem("e"));
 
 
         Thread.Sleep(10000);

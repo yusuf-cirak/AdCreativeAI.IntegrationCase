@@ -26,12 +26,15 @@ public sealed class ItemIntegrationService
         string message;
         var sw = new Stopwatch();
         sw.Start();
-        if (!LockProvider.AcquireLock(itemContent, expirationSecond: this.ItemLockCacheExpiration))
+
+        // Trying to acquire lock.
+        if (!this.LockProvider.AcquireLock(itemContent, expirationSecond: this.ItemLockCacheExpiration))
         {
             message = $"Duplicate item received with content {itemContent}.";
             return new Result(false, message);
         }
 
+        // No need to do internal locking here. The acquiring lock process is already thread-safe.
         Console.WriteLine($"SaveItem: Lock acquired for {itemContent}");
         try
         {
@@ -51,6 +54,9 @@ public sealed class ItemIntegrationService
         }
         finally
         {
+            // Not releasing the lock in here by choice because the system can get the same content more than once.
+            // Distributed: The lock will be released by redis cache.
+            // In-memory: The lock will be released by the task that was registered to pool.
             Console.WriteLine(
                 $"SaveItem for {itemContent} took {sw.ElapsedMilliseconds}ms to complete.");
         }
